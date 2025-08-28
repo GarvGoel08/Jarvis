@@ -1,26 +1,27 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Loader, Trash2, Settings, Info } from 'lucide-react';
-import MessageBubble from './MessageBubble';
-import SystemInfo from './SystemInfo';
-import './ChatInterface.css';
+import React, { useState, useRef, useEffect } from "react";
+import { Send, User, Bot, Loader, Trash2, Settings, Info } from "lucide-react";
+import MessageBubble from "./MessageBubble";
+import SystemInfo from "./SystemInfo";
+import "./ChatInterface.css";
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      type: 'assistant',
-      content: 'Hello! I\'m JarvisAI, your intelligent assistant. I can help you with web browsing, data extraction, research, and many other tasks. What would you like me to do today?',
-      timestamp: new Date()
-    }
+      type: "assistant",
+      content:
+        "Hello! I'm JarvisAI, your intelligent assistant. I can help you with web browsing, data extraction, research, and many other tasks. What would you like me to do today?",
+      timestamp: new Date(),
+    },
   ]);
-  const [inputMessage, setInputMessage] = useState('');
+  const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showSystemInfo, setShowSystemInfo] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -32,36 +33,80 @@ const ChatInterface = () => {
 
     const userMessage = {
       id: Date.now(),
-      type: 'user',
+      type: "user",
       content: inputMessage,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
+    setMessages((prev) => [...prev, userMessage]);
+    setInputMessage("");
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/jobs`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userPrompt: inputMessage,
-        })
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/jobs`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userPrompt: inputMessage,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      
+      console.log("API Response:", data); // Debug logging
+
+      // Extract content ensuring it's always a string
+      let content;
+      if (
+        data.result &&
+        typeof data.result === "object" &&
+        data.result.response
+      ) {
+        content = data.result.response;
+      } else if (
+        data.result &&
+        typeof data.result === "object" &&
+        data.result.result
+      ) {
+        content = data.result.result;
+      } else if (data.result && typeof data.result === "string") {
+        content = data.result;
+      } else if (data.response) {
+        content = data.response;
+      } else if (data.message) {
+        content = data.message;
+      } else {
+        content = "I completed your request, but no response was provided.";
+      }
+
+      // Ensure content is always a string
+      if (typeof content !== "string") {
+        console.log(
+          "Content is not a string, converting:",
+          typeof content,
+          content
+        );
+        if (typeof content === "object") {
+          content = JSON.stringify(content, null, 2);
+        } else {
+          content = String(content);
+        }
+      }
+
+      console.log("Final content:", typeof content, content); // Debug logging
+
       const assistantMessage = {
         id: Date.now() + 1,
-        type: 'assistant',
-        content: data.result?.response || data.message || 'I completed your request, but no response was provided.',
+        type: "assistant",
+        content: content,
         timestamp: new Date(),
         metadata: {
           jobId: data.jobId,
@@ -69,30 +114,31 @@ const ChatInterface = () => {
           agent: data.result?.agent,
           isCompleted: data.result?.isCompleted,
           totalIterations: data.result?.totalIterations,
-          agentChain: data.agentChain
-        }
+          agentChain: data.agentChain,
+        },
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Error sending message:', error);
-      
+      console.error("Error sending message:", error);
+
       const errorMessage = {
         id: Date.now() + 1,
-        type: 'assistant',
-        content: 'Sorry, I encountered an error while processing your request. Please try again or check if the backend server is running.',
+        type: "assistant",
+        content:
+          "Sorry, I encountered an error while processing your request. Please try again or check if the backend server is running.",
         timestamp: new Date(),
-        isError: true
+        isError: true,
       };
 
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
@@ -102,10 +148,10 @@ const ChatInterface = () => {
     setMessages([
       {
         id: 1,
-        type: 'assistant',
-        content: 'Chat cleared! How can I help you today?',
-        timestamp: new Date()
-      }
+        type: "assistant",
+        content: "Chat cleared! How can I help you today?",
+        timestamp: new Date(),
+      },
     ]);
   };
 
@@ -120,18 +166,14 @@ const ChatInterface = () => {
           </div>
         </div>
         <div className="header-right">
-          <button 
+          <button
             className="header-btn"
             onClick={() => setShowSystemInfo(!showSystemInfo)}
             title="System Info"
           >
             <Info size={18} />
           </button>
-          <button 
-            className="header-btn"
-            onClick={clearChat}
-            title="Clear Chat"
-          >
+          <button className="header-btn" onClick={clearChat} title="Clear Chat">
             <Trash2 size={18} />
           </button>
         </div>
@@ -148,7 +190,7 @@ const ChatInterface = () => {
           {messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))}
-          
+
           {isLoading && (
             <div className="message-bubble assistant">
               <div className="message-avatar">
@@ -162,7 +204,7 @@ const ChatInterface = () => {
               </div>
             </div>
           )}
-          
+
           <div ref={messagesEndRef} />
         </div>
       </div>
@@ -180,18 +222,21 @@ const ChatInterface = () => {
             rows="1"
             disabled={isLoading}
           />
-          <button 
+          <button
             onClick={sendMessage}
-            className={`send-btn ${(!inputMessage.trim() || isLoading) ? 'disabled' : ''}`}
+            className={`send-btn ${
+              !inputMessage.trim() || isLoading ? "disabled" : ""
+            }`}
             disabled={!inputMessage.trim() || isLoading}
           >
             <Send size={18} />
           </button>
         </div>
-        
+
         <div className="input-footer">
           <span className="disclaimer">
-            JarvisAI can browse websites, extract data, and perform web automation tasks.
+            JarvisAI can browse websites, extract data, and perform web
+            automation tasks.
           </span>
         </div>
       </div>

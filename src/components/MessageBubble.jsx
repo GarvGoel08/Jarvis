@@ -27,6 +27,17 @@ const MessageBubble = ({ message }) => {
   const isUser = message.type === 'user';
   const isError = message.isError;
 
+  // Ensure content is always a string for ReactMarkdown
+  const getContentAsString = (content) => {
+    if (typeof content === 'string') {
+      return content;
+    } else if (typeof content === 'object') {
+      return JSON.stringify(content, null, 2);
+    } else {
+      return String(content);
+    }
+  };
+
   return (
     <div className={`message-bubble ${isUser ? 'user' : 'assistant'} ${isError ? 'error' : ''}`}>
       <div className="message-avatar">
@@ -36,10 +47,10 @@ const MessageBubble = ({ message }) => {
       <div className="message-content">
         <div className="message-body">
           {isUser ? (
-            <p>{message.content}</p>
+            <p>{getContentAsString(message.content)}</p>
           ) : (
             <div className="markdown-content">
-              <ReactMarkdown>{message.content}</ReactMarkdown>
+              <ReactMarkdown>{getContentAsString(message.content)}</ReactMarkdown>
             </div>
           )}
         </div>
