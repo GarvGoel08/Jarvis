@@ -68,15 +68,15 @@ const ChatInterface = () => {
       if (
         data.result &&
         typeof data.result === "object" &&
-        data.result.response
-      ) {
-        content = data.result.response;
-      } else if (
-        data.result &&
-        typeof data.result === "object" &&
         data.result.result
       ) {
         content = data.result.result;
+      } else if (
+        data.result &&
+        typeof data.result === "object" &&
+        data.result.response
+      ) {
+        content = data.result.response;
       } else if (data.result && typeof data.result === "string") {
         content = data.result;
       } else if (data.response) {
